@@ -10,14 +10,18 @@ from zoneinfo import ZoneInfo
 TORONTO_TZ = ZoneInfo("America/Toronto")
 PICKS_FILE = "picks_history.json"
 
+
 def _get_repo():
     return st.secrets.get("GITHUB_REPO", "")
+
 
 def _get_token():
     return st.secrets.get("GITHUB_TOKEN", "")
 
+
 def _api_url():
     return f"https://api.github.com/repos/{_get_repo()}/contents/{PICKS_FILE}"
+
 
 def _headers():
     return {
@@ -25,8 +29,8 @@ def _headers():
         "Accept": "application/vnd.github.v3+json",
     }
 
+
 def load_all_picks():
-    """Load full picks history from GitHub. Returns dict of {date: {...}}."""
     try:
         r = requests.get(_api_url(), headers=_headers(), timeout=10)
         if r.status_code == 200:
@@ -34,13 +38,13 @@ def load_all_picks():
             content = base64.b64decode(data["content"]).decode("utf-8")
             return json.loads(content), data["sha"]
         elif r.status_code == 404:
-            return {}, None  # File doesn't exist yet
+            return {}, None
     except Exception as e:
         st.error(f"Load error: {e}")
     return {}, None
 
+
 def save_todays_picks(category, picks_data):
-    """Save today's picks under date key. Category groups them (e.g. 'corners')."""
     history, sha = load_all_picks()
     today = datetime.now(TORONTO_TZ).strftime("%Y-%m-%d")
 
@@ -58,7 +62,7 @@ def save_todays_picks(category, picks_data):
     if sha:
         payload["sha"] = sha
 
-try:
+    try:
         r = requests.put(_api_url(), headers=_headers(), json=payload, timeout=10)
         if r.status_code in (200, 201):
             return True
