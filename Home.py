@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from io import StringIO
 import requests
+from picks_storage import save_todays_picks
 
 TORONTO_TZ = ZoneInfo("America/Toronto")
 LONDON_TZ  = ZoneInfo("Europe/London")
@@ -131,7 +132,30 @@ for _, fx in fixtures.iterrows():
      
 
 st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
-
+# Save button
+if rows and any(r.get("HCA Pred (÷{})".format(divisor)) != "—" for r in rows):
+    c1, c2, c3 = st.columns([2, 1, 2])
+    with c2:
+        if st.button("💾 Save Today's Picks", use_container_width=True):
+            picks_to_save = []
+            for r in rows:
+                picks_to_save.append({
+                    "date":        r["Date"],
+                    "home":        r["Home"],
+                    "away":        r["Away"],
+                    "home_avg":    r[f"Home Avg (L{last_n})"],
+                    "away_avg":    r[f"Away Avg (L{last_n})"],
+                    "raw_sum":     r["Raw Sum"],
+                    "hca_pred":    r[f"HCA Pred (÷{divisor})"],
+                    "market_line": market_line,
+                    "divisor":     divisor,
+                    "lean":        r[f"vs {market_line}"],
+                })
+            if save_todays_picks("corners", picks_to_save):
+                st.success("✅ Picks saved!")
+            else:
+                st.error("Save failed — check GITHUB_TOKEN.")
+              
 # ── Diagnostic / explain ─────────────────────────────────────────────────────
 c1, c2, c3 = st.columns(3)
 c1.metric("Matches in dataset", len(results))
