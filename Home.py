@@ -21,7 +21,25 @@ st.caption(f"{datetime.now(TORONTO_TZ).strftime('%A, %B %d, %Y')}")
 API_KEY = st.secrets["FOOTBALL_API_KEY"]
 HEADERS = {"x-apisports-key": API_KEY}
 BASE_URL = "https://v3.football.api-sports.io"
-
+# ── DEBUG: Check API status & seasons ──────────────────────────────────────────
+with st.expander("🔍 Debug — API status"):
+    status_resp = requests.get(f"{BASE_URL}/status", headers=HEADERS, timeout=10).json()
+    st.json(status_resp)
+    
+    st.markdown("**Available seasons for Premier League (id=39):**")
+    leagues_resp = requests.get(f"{BASE_URL}/leagues", headers=HEADERS, params={"id": 39}, timeout=10).json()
+    seasons = leagues_resp.get("response", [{}])[0].get("seasons", [])
+    available = [s["year"] for s in seasons if s.get("coverage", {}).get("fixtures", {}).get("statistics_fixtures")]
+    st.write(f"Seasons with fixture statistics: {available}")
+    
+    st.markdown(f"**Trying current call with season={CURRENT_SEASON}, date=tomorrow:**")
+    from datetime import timedelta
+    test_date = (datetime.now(TORONTO_TZ).date() + timedelta(days=1)).strftime("%Y-%m-%d")
+    test_resp = requests.get(f"{BASE_URL}/fixtures", headers=HEADERS,
+                              params={"league": 39, "season": CURRENT_SEASON, "date": test_date},
+                              timeout=10).json()
+    st.write(f"Errors: {test_resp.get('errors')}")
+    st.write(f"Results count: {test_resp.get('results')}")
 # Sidebar
 divisor = st.sidebar.slider("HCA divisor", 1.0, 2.0, 1.5, step=0.05)
 last_n  = st.sidebar.slider("Games for form", 3, 10, 7)
