@@ -44,15 +44,7 @@ def load_fixtures():
     # Strip whitespace from column names just in case
     df.columns = df.columns.str.strip()
     
-    # Debug helper — temporary
-    with st.expander("🔍 Debug — fixtures CSV columns"):
-        st.write("First 5 columns:", list(df.columns[:5]))
-        st.write("Row count:", len(df))
-        st.dataframe(df.head(3))
-    
-    if "Div" not in df.columns:
-        st.error(f"'Div' column missing! Columns are: {list(df.columns)}")
-        st.stop()
+
     
     df = df[df["Div"] == "E0"].copy()
     df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
