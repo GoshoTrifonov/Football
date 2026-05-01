@@ -23,7 +23,9 @@ st.caption(f"{datetime.now(TORONTO_TZ).strftime('%A, %B %d, %Y')} • Data: foot
 # ── Sidebar ──────────────────────────────────────────────────────────────────
 divisor = st.sidebar.slider("HCA divisor", 1.0, 2.0, 1.5, step=0.05)
 last_n  = st.sidebar.slider("Games for form", 3, 10, 7)
-
+market_line = st.sidebar.number_input("Market line (typical: 10.5)", 
+                                       min_value=7.0, max_value=14.0, 
+                                       value=10.5, step=0.5)
 # ── Data loaders ─────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600)
 def load_results():
