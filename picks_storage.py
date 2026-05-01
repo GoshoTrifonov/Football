@@ -58,9 +58,14 @@ def save_todays_picks(category, picks_data):
     if sha:
         payload["sha"] = sha
 
-    try:
+try:
         r = requests.put(_api_url(), headers=_headers(), json=payload, timeout=10)
-        return r.status_code in (200, 201)
+        if r.status_code in (200, 201):
+            return True
+        else:
+            st.error(f"GitHub API error {r.status_code}: {r.json().get('message', 'unknown')}")
+            st.write(f"Repo configured: `{_get_repo()}`")
+            return False
     except Exception as e:
         st.error(f"Save error: {e}")
         return False
