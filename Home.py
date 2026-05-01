@@ -107,14 +107,14 @@ for _, fx in fixtures.iterrows():
     if home_avg is not None and away_avg is not None:
         raw_sum  = round(home_avg + away_avg, 1)
         hca_pred = round((home_avg + away_avg) / divisor, 1)
-     edge = round(hca_pred - market_line, 1)
+        edge = round(hca_pred - market_line, 1)
         if edge > 0.5:
             lean_95 = f"⬆️ Over (+{edge})"
         elif edge < -0.5:
             lean_95 = f"⬇️ Under ({edge})"
         else:
             lean_95 = f"➖ Pass ({edge:+})"
-    else:
+        else:
         raw_sum = hca_pred = lean_95 = "—"
 
     rows.append({
