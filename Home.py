@@ -107,7 +107,13 @@ for _, fx in fixtures.iterrows():
     if home_avg is not None and away_avg is not None:
         raw_sum  = round(home_avg + away_avg, 1)
         hca_pred = round((home_avg + away_avg) / divisor, 1)
-        lean_95  = "⬆️ Over" if hca_pred > 9.5 else "⬇️ Under"
+     edge = round(hca_pred - market_line, 1)
+        if edge > 0.5:
+            lean_95 = f"⬆️ Over (+{edge})"
+        elif edge < -0.5:
+            lean_95 = f"⬇️ Under ({edge})"
+        else:
+            lean_95 = f"➖ Pass ({edge:+})"
     else:
         raw_sum = hca_pred = lean_95 = "—"
 
@@ -120,7 +126,7 @@ for _, fx in fixtures.iterrows():
         f"Away Avg (L{last_n})": away_avg,
         "Raw Sum":           raw_sum,
         f"HCA Pred (÷{divisor})": hca_pred,
-        "vs 9.5":            lean_95,
+     f"vs {market_line}":  lean_95,
     })
 
 st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
