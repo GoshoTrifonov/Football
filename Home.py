@@ -26,14 +26,21 @@ BASE_URL = "https://v3.football.api-sports.io"
 divisor = st.sidebar.slider("HCA divisor", 1.0, 2.0, 1.5, step=0.05)
 last_n  = st.sidebar.slider("Games for form", 3, 10, 7)
 
+# Day selector
+when = st.radio("Show games for:", ["Today", "Tomorrow"], horizontal=True)
+
 @st.cache_data(ttl=3600)
 def api_get(endpoint, params):
     r = requests.get(f"{BASE_URL}/{endpoint}", headers=HEADERS, params=params, timeout=10)
     return r.json().get("response", [])
 
-def get_todays_fixtures():
-    today = datetime.now(TORONTO_TZ).strftime("%Y-%m-%d")
-    return api_get("fixtures", {"league": PL_LEAGUE_ID, "season": CURRENT_SEASON, "date": today})
+def get_fixtures_for_day(offset_days=0):
+    from datetime import timedelta
+    target = datetime.now(TORONTO_TZ).date() + timedelta(days=offset_days)
+    return api_get("fixtures", {
+        "league": PL_LEAGUE_ID, "season": CURRENT_SEASON,
+        "date": target.strftime("%Y-%m-%d")
+    })
 
 def get_team_recent_fixtures(team_id, last=7):
     return api_get("fixtures", {
@@ -54,8 +61,9 @@ def extract_corners(stats_response, team_id):
     return 0
 
 # ── Load today's fixtures ──────────────────────────────────────────────────────
-with st.spinner("Loading today's PL fixtures..."):
-    fixtures = get_todays_fixtures()
+offset = 0 if when == "Today" else 1
+with st.spinner(f"Loading {when.lower()}'s PL fixtures..."):
+    fixtures = get_fixtures_for_day(offset)
 
 if not fixtures:
     st.warning("No Premier League matches today. Check back on a matchday!")
