@@ -12,7 +12,7 @@ import time
 
 TORONTO_TZ = ZoneInfo("America/Toronto")
 PL_LEAGUE_ID = 39
-CURRENT_SEASON = 2024
+CURRENT_SEASON = 2025
 
 st.set_page_config(page_title="⚽ Corners Predictor", page_icon="⚽", layout="wide")
 st.title("⚽ Premier League — Corners Predictor")
