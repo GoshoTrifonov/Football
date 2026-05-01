@@ -34,12 +34,26 @@ def load_results():
     df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
     return df.dropna(subset=["Date", "HC", "AC"]).sort_values("Date")
 
-@st.cache_data(ttl=900)  # 15 min — fixtures change more often
+@st.cache_data(ttl=900)
 def load_fixtures():
     """Upcoming fixtures — all leagues, we filter to E0 (PL)."""
     r = requests.get(FIXTURES_URL, timeout=15)
     r.raise_for_status()
-    df = pd.read_csv(StringIO(r.text))
+    # utf-8-sig strips Byte-Order-Mark if present
+    df = pd.read_csv(StringIO(r.content.decode("utf-8-sig")))
+    # Strip whitespace from column names just in case
+    df.columns = df.columns.str.strip()
+    
+    # Debug helper — temporary
+    with st.expander("🔍 Debug — fixtures CSV columns"):
+        st.write("First 5 columns:", list(df.columns[:5]))
+        st.write("Row count:", len(df))
+        st.dataframe(df.head(3))
+    
+    if "Div" not in df.columns:
+        st.error(f"'Div' column missing! Columns are: {list(df.columns)}")
+        st.stop()
+    
     df = df[df["Div"] == "E0"].copy()
     df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
     return df.dropna(subset=["Date"]).sort_values(["Date", "Time"])
