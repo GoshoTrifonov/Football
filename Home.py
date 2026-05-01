@@ -105,29 +105,30 @@ for _, fx in fixtures.iterrows():
     away_avg = team_corner_avg(away, last_n)
 
     if home_avg is not None and away_avg is not None:
-        raw_sum  = round(home_avg + away_avg, 1)
+        raw_sum = round(home_avg + away_avg, 1)
         hca_pred = round((home_avg + away_avg) / divisor, 1)
         edge = round(hca_pred - market_line, 1)
         if edge > 0.5:
-            lean_95 = f"⬆️ Over (+{edge})"
+            lean = f"⬆️ Over (+{edge})"
         elif edge < -0.5:
-            lean_95 = f"⬇️ Under ({edge})"
+            lean = f"⬇️ Under ({edge})"
         else:
-            lean_95 = f"➖ Pass ({edge:+})"
-        else:
-        raw_sum = hca_pred = lean_95 = "—"
+            lean = f"➖ Pass ({edge:+})"
+    else:
+        raw_sum = hca_pred = lean = "—"
 
     rows.append({
-        "Date":              fx["Date"].strftime("%a %b %d"),
-        "Time (UK)":         fx.get("Time", ""),
-        "Home":              home,
-        "Away":              away,
+        "Date": fx["Date"].strftime("%a %b %d"),
+        "Time (UK)": fx.get("Time", ""),
+        "Home": home,
+        "Away": away,
         f"Home Avg (L{last_n})": home_avg,
         f"Away Avg (L{last_n})": away_avg,
-        "Raw Sum":           raw_sum,
+        "Raw Sum": raw_sum,
         f"HCA Pred (÷{divisor})": hca_pred,
-     f"vs {market_line}":  lean_95,
+        f"vs {market_line}": lean,
     })
+     
 
 st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
