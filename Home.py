@@ -1,172 +1,136 @@
 """
 Football Corners Predictor — Premier League
-Standard vs HCA Model corner predictions
+Data: football-data.co.uk (free, no API key needed)
 """
 
 import streamlit as st
-import requests
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-import time
+from io import StringIO
+import requests
 
 TORONTO_TZ = ZoneInfo("America/Toronto")
-PL_LEAGUE_ID = 39
-CURRENT_SEASON = 2025
+LONDON_TZ  = ZoneInfo("Europe/London")
+
+PL_RESULTS_URL = "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
+FIXTURES_URL   = "https://www.football-data.co.uk/fixtures.csv"
 
 st.set_page_config(page_title="⚽ Corners Predictor", page_icon="⚽", layout="wide")
 st.title("⚽ Premier League — Corners Predictor")
-st.caption(f"{datetime.now(TORONTO_TZ).strftime('%A, %B %d, %Y')}")
+st.caption(f"{datetime.now(TORONTO_TZ).strftime('%A, %B %d, %Y')} • Data: football-data.co.uk")
 
-API_KEY = st.secrets["FOOTBALL_API_KEY"]
-HEADERS = {"x-apisports-key": API_KEY}
-BASE_URL = "https://v3.football.api-sports.io"
-# ── DEBUG: Check API status & seasons ──────────────────────────────────────────
-with st.expander("🔍 Debug — API status"):
-    status_resp = requests.get(f"{BASE_URL}/status", headers=HEADERS, timeout=10).json()
-    st.json(status_resp)
-    
-    st.markdown("**Available seasons for Premier League (id=39):**")
-    leagues_resp = requests.get(f"{BASE_URL}/leagues", headers=HEADERS, params={"id": 39}, timeout=10).json()
-    seasons = leagues_resp.get("response", [{}])[0].get("seasons", [])
-    available = [s["year"] for s in seasons if s.get("coverage", {}).get("fixtures", {}).get("statistics_fixtures")]
-    st.write(f"Seasons with fixture statistics: {available}")
-    
-    st.markdown(f"**Trying current call with season={CURRENT_SEASON}, date=tomorrow:**")
-    from datetime import timedelta
-    test_date = (datetime.now(TORONTO_TZ).date() + timedelta(days=1)).strftime("%Y-%m-%d")
-    test_resp = requests.get(f"{BASE_URL}/fixtures", headers=HEADERS,
-                              params={"league": 39, "season": CURRENT_SEASON, "date": test_date},
-                              timeout=10).json()
-    st.write(f"Errors: {test_resp.get('errors')}")
-    st.write(f"Results count: {test_resp.get('results')}")
-# Sidebar
+# ── Sidebar ──────────────────────────────────────────────────────────────────
 divisor = st.sidebar.slider("HCA divisor", 1.0, 2.0, 1.5, step=0.05)
 last_n  = st.sidebar.slider("Games for form", 3, 10, 7)
 
-# Day selector
-when = st.radio("Show games for:", ["Today", "Tomorrow"], horizontal=True)
-
+# ── Data loaders ─────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600)
-def api_get(endpoint, params):
-    r = requests.get(f"{BASE_URL}/{endpoint}", headers=HEADERS, params=params, timeout=10)
-    return r.json().get("response", [])
+def load_results():
+    """Historical PL matches this season — has HC/AC corner columns."""
+    r = requests.get(PL_RESULTS_URL, timeout=15)
+    r.raise_for_status()
+    df = pd.read_csv(StringIO(r.text))
+    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+    return df.dropna(subset=["Date", "HC", "AC"]).sort_values("Date")
 
-def get_fixtures_for_day(offset_days=0):
-    from datetime import timedelta
-    target = datetime.now(TORONTO_TZ).date() + timedelta(days=offset_days)
-    return api_get("fixtures", {
-        "league": PL_LEAGUE_ID, "season": CURRENT_SEASON,
-        "date": target.strftime("%Y-%m-%d")
-    })
+@st.cache_data(ttl=900)  # 15 min — fixtures change more often
+def load_fixtures():
+    """Upcoming fixtures — all leagues, we filter to E0 (PL)."""
+    r = requests.get(FIXTURES_URL, timeout=15)
+    r.raise_for_status()
+    df = pd.read_csv(StringIO(r.text))
+    df = df[df["Div"] == "E0"].copy()
+    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+    return df.dropna(subset=["Date"]).sort_values(["Date", "Time"])
 
-def get_team_recent_fixtures(team_id, last=7):
-    return api_get("fixtures", {
-        "league": PL_LEAGUE_ID, "season": CURRENT_SEASON,
-        "team": team_id, "last": last, "status": "FT"
-    })
+# ── Day selector ─────────────────────────────────────────────────────────────
+when = st.radio("Show games for:", ["Today", "Tomorrow", "All upcoming"], horizontal=True)
 
-def get_fixture_stats(fixture_id):
-    return api_get("fixtures/statistics", {"fixture": fixture_id})
+with st.spinner("Loading data..."):
+    results = load_results()
+    fixtures = load_fixtures()
 
-def extract_corners(stats_response, team_id):
-    for team_data in stats_response:
-        if team_data["team"]["id"] == team_id:
-            for s in team_data["statistics"]:
-                if s["type"] == "Corner Kicks":
-                    v = s["value"]
-                    return int(v) if v is not None else 0
-    return 0
+today_london = datetime.now(LONDON_TZ).date()
 
-# ── Load today's fixtures ──────────────────────────────────────────────────────
-offset = 0 if when == "Today" else 1
-with st.spinner(f"Loading {when.lower()}'s PL fixtures..."):
-    fixtures = get_fixtures_for_day(offset)
+if when == "Today":
+    target_dates = [today_london]
+elif when == "Tomorrow":
+    target_dates = [today_london + timedelta(days=1)]
+else:
+    target_dates = None  # all upcoming
 
-if not fixtures:
-    st.warning("No Premier League matches today. Check back on a matchday!")
+if target_dates is not None:
+    fixtures = fixtures[fixtures["Date"].dt.date.isin(target_dates)]
+else:
+    fixtures = fixtures[fixtures["Date"].dt.date >= today_london]
+
+if fixtures.empty:
+    st.warning(f"No Premier League matches for: {when}")
+    with st.expander("📅 See all upcoming PL fixtures"):
+        all_up = load_fixtures()
+        all_up = all_up[all_up["Date"].dt.date >= today_london]
+        st.dataframe(all_up[["Date","Time","HomeTeam","AwayTeam"]],
+                     hide_index=True, use_container_width=True)
     st.stop()
 
-st.success(f"Found {len(fixtures)} match(es) today")
+st.success(f"Found {len(fixtures)} match(es)")
 
-# ── Collect all teams playing today ───────────────────────────────────────────
-teams_needed = set()
-for f in fixtures:
-    teams_needed.add(f["teams"]["home"]["id"])
-    teams_needed.add(f["teams"]["away"]["id"])
+# ── Compute corners average per team (last N home/away combined) ─────────────
+def team_corner_avg(team, n):
+    """A team's own corners-won per game over their last N matches."""
+    home_games = results[results["HomeTeam"] == team][["Date","HC"]].rename(columns={"HC":"corners"})
+    away_games = results[results["AwayTeam"] == team][["Date","AC"]].rename(columns={"AC":"corners"})
+    all_games = pd.concat([home_games, away_games]).sort_values("Date").tail(n)
+    if all_games.empty:
+        return None
+    return round(all_games["corners"].mean(), 2)
 
-# ── Fetch last N fixtures per team ────────────────────────────────────────────
-with st.spinner(f"Fetching last {last_n} games per team..."):
-    team_fixture_map = {}
-    for tid in teams_needed:
-        team_fixture_map[tid] = get_team_recent_fixtures(tid, last_n)
-        time.sleep(0.1)
-
-# ── Collect unique fixture IDs (deduplication saves requests) ─────────────────
-unique_fixture_ids = set()
-for fixlist in team_fixture_map.values():
-    for f in fixlist:
-        unique_fixture_ids.add(f["fixture"]["id"])
-
-# ── Fetch corner stats for all unique fixtures ────────────────────────────────
-with st.spinner(f"Fetching corner stats ({len(unique_fixture_ids)} fixtures)..."):
-    fixture_stats_cache = {}
-    ids_list = list(unique_fixture_ids)
-    prog = st.progress(0)
-    for i, fid in enumerate(ids_list):
-        fixture_stats_cache[fid] = get_fixture_stats(fid)
-        prog.progress((i + 1) / len(ids_list))
-        time.sleep(0.1)
-    prog.empty()
-
-# ── Compute corner average per team ───────────────────────────────────────────
-def team_corner_avg(team_id):
-    fixlist = team_fixture_map.get(team_id, [])
-    corners = []
-    for f in fixlist:
-        fid = f["fixture"]["id"]
-        stats = fixture_stats_cache.get(fid, [])
-        corners.append(extract_corners(stats, team_id))
-    return round(sum(corners) / len(corners), 2) if corners else None
-
-# ── Build predictions ──────────────────────────────────────────────────────────
+# ── Build predictions ────────────────────────────────────────────────────────
 st.markdown("---")
-st.markdown("### 📊 Today's Corner Predictions")
+st.markdown(f"### 📊 Predictions ({when})")
 
 rows = []
-for f in fixtures:
-    home = f["teams"]["home"]
-    away = f["teams"]["away"]
-
-    home_avg = team_corner_avg(home["id"])
-    away_avg = team_corner_avg(away["id"])
+for _, fx in fixtures.iterrows():
+    home, away = fx["HomeTeam"], fx["AwayTeam"]
+    home_avg = team_corner_avg(home, last_n)
+    away_avg = team_corner_avg(away, last_n)
 
     if home_avg is not None and away_avg is not None:
         raw_sum  = round(home_avg + away_avg, 1)
         hca_pred = round((home_avg + away_avg) / divisor, 1)
-        lean     = "⬆️ Over" if hca_pred > 9.5 else "⬇️ Under"
+        lean_95  = "⬆️ Over" if hca_pred > 9.5 else "⬇️ Under"
     else:
-        raw_sum = hca_pred = lean = "—"
+        raw_sum = hca_pred = lean_95 = "—"
 
     rows.append({
-        "Home Team":        home["name"],
-        "Away Team":        away["name"],
-        "Home Avg (last N)": home_avg,
-        "Away Avg (last N)": away_avg,
+        "Date":              fx["Date"].strftime("%a %b %d"),
+        "Time (UK)":         fx.get("Time", ""),
+        "Home":              home,
+        "Away":              away,
+        f"Home Avg (L{last_n})": home_avg,
+        f"Away Avg (L{last_n})": away_avg,
         "Raw Sum":           raw_sum,
         f"HCA Pred (÷{divisor})": hca_pred,
-        "vs 9.5 line":      lean,
+        "vs 9.5":            lean_95,
     })
 
-df = pd.DataFrame(rows)
-st.dataframe(df, hide_index=True, use_container_width=True)
+st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+
+# ── Diagnostic / explain ─────────────────────────────────────────────────────
+c1, c2, c3 = st.columns(3)
+c1.metric("Matches in dataset", len(results))
+c2.metric("Latest match date", results["Date"].max().strftime("%b %d, %Y"))
+c3.metric("Avg corners/game (PL this season)",
+          f"{(results['HC'] + results['AC']).mean():.1f}")
 
 with st.expander("ℹ️ How it works"):
     st.markdown(f"""
-    - **Home/Away Avg**: each team's own corners won per game (last {last_n} games)
-    - **Raw Sum**: Home Avg + Away Avg — the upper estimate
-    - **HCA Pred**: (Home Avg + Away Avg) ÷ {divisor} — your calibrated betting line
-    - **vs 9.5 line**: rough lean against a standard 9.5 sportsbook line
+    - **Source:** football-data.co.uk (CSV, updated ~daily)
+    - **Home/Away Avg:** team's own corners won per game (last {last_n} matches, home + away combined)
+    - **Raw Sum:** Home Avg + Away Avg
+    - **HCA Pred:** (Home + Away) ÷ {divisor} — your calibrated betting line
+    - **vs 9.5:** lean against a typical sportsbook line of 9.5
 
-    💡 Adjust the **HCA divisor** in the sidebar to calibrate as results accumulate.
+    Adjust the divisor in the sidebar to calibrate as results accumulate.
     """)
