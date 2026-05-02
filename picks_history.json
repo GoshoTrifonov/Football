@@ -1,0 +1,54 @@
+{
+  "2026-05-01": {
+    "corners": [
+      {
+        "date": "Sat May 02",
+        "home": "Brentford",
+        "away": "West Ham",
+        "home_avg": 4.71,
+        "away_avg": 4.43,
+        "raw_sum": 9.1,
+        "hca_pred": 6.1,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-4.4)"
+      },
+      {
+        "date": "Sat May 02",
+        "home": "Newcastle",
+        "away": "Brighton",
+        "home_avg": 3.86,
+        "away_avg": 4.0,
+        "raw_sum": 7.9,
+        "hca_pred": 5.2,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-5.3)"
+      },
+      {
+        "date": "Sat May 02",
+        "home": "Wolves",
+        "away": "Sunderland",
+        "home_avg": 3.29,
+        "away_avg": 3.86,
+        "raw_sum": 7.2,
+        "hca_pred": 4.8,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-5.7)"
+      },
+      {
+        "date": "Sat May 02",
+        "home": "Arsenal",
+        "away": "Fulham",
+        "home_avg": 6.14,
+        "away_avg": 5.14,
+        "raw_sum": 11.3,
+        "hca_pred": 7.5,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-3.0)"
+      }
+    ]
+  }
+}
