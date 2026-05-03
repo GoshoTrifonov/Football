@@ -50,5 +50,45 @@
         "lean": "\u2b07\ufe0f Under (-3.0)"
       }
     ]
+  },
+  "2026-05-03": {
+    "corners": [
+      {
+        "date": "Sun May 03",
+        "home": "Bournemouth",
+        "away": "Crystal Palace",
+        "home_avg": 5.86,
+        "away_avg": 4.71,
+        "raw_sum": 10.6,
+        "hca_pred": 7.0,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-3.5)"
+      },
+      {
+        "date": "Sun May 03",
+        "home": "Man United",
+        "away": "Liverpool",
+        "home_avg": 6.29,
+        "away_avg": 7.0,
+        "raw_sum": 13.3,
+        "hca_pred": 8.9,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-1.6)"
+      },
+      {
+        "date": "Sun May 03",
+        "home": "Aston Villa",
+        "away": "Tottenham",
+        "home_avg": 4.57,
+        "away_avg": 7.0,
+        "raw_sum": 11.6,
+        "hca_pred": 7.7,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-2.8)"
+      }
+    ]
   }
 }
