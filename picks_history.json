@@ -90,5 +90,69 @@
         "lean": "\u2b07\ufe0f Under (-2.8)"
       }
     ]
+  },
+  "2026-05-09": {
+    "corners": [
+      {
+        "date": "Sat May 09",
+        "home": "Liverpool",
+        "away": "Chelsea",
+        "home_avg": 5.86,
+        "away_avg": 7.29,
+        "raw_sum": 13.2,
+        "hca_pred": 8.8,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-1.7)"
+      },
+      {
+        "date": "Sat May 09",
+        "home": "Brighton",
+        "away": "Wolves",
+        "home_avg": 4.86,
+        "away_avg": 3.71,
+        "raw_sum": 8.6,
+        "hca_pred": 5.7,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-4.8)"
+      },
+      {
+        "date": "Sat May 09",
+        "home": "Fulham",
+        "away": "Bournemouth",
+        "home_avg": 5.0,
+        "away_avg": 5.86,
+        "raw_sum": 10.9,
+        "hca_pred": 7.2,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-3.3)"
+      },
+      {
+        "date": "Sat May 09",
+        "home": "Sunderland",
+        "away": "Man United",
+        "home_avg": 3.86,
+        "away_avg": 5.71,
+        "raw_sum": 9.6,
+        "hca_pred": 6.4,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-4.1)"
+      },
+      {
+        "date": "Sat May 09",
+        "home": "Man City",
+        "away": "Brentford",
+        "home_avg": 9.14,
+        "away_avg": 3.86,
+        "raw_sum": 13.0,
+        "hca_pred": 8.7,
+        "market_line": 10.5,
+        "divisor": 1.5,
+        "lean": "\u2b07\ufe0f Under (-1.8)"
+      }
+    ]
   }
 }
