@@ -25,6 +25,8 @@ FIXTURES_URL            = "https://www.football-data.co.uk/fixtures.csv"
 LEAGUES = {
     "E0": "Premier League",
     "E1": "Championship",
+    "E2": "League One",
+    "E3": "League Two",
     # "SP1": "La Liga",  "D1": "Bundesliga",  "I1": "Serie A",  "F1": "Ligue 1"
 }
 
@@ -49,9 +51,9 @@ divisor      = st.sidebar.slider("Model A: HCA divisor", 1.0, 2.0, 1.0, step=0.0
                                   help="Default lowered to 1.0 — sum of team averages is already close to a match total.")
 last_n       = st.sidebar.slider("Games for Model A form window", 3, 10, 7)
 market_line  = st.sidebar.number_input("Market line",
-                                        min_value=7.0, max_value=14.0,
+                                        min_value=6.0, max_value=14.0,
                                         value=10.5, step=0.5,
-                                        help="PL is typically 10.5; Championship is typically 9.5. Adjust when viewing one league at a time.")
+                                        help="Typical lines: PL 10.5 · Championship 9.5 · League One 9.0 · League Two 8.5. Adjust when picking within one league.")
 active_model = st.sidebar.radio("Bet lean driven by:",
                                 ["Model B (opponent-adjusted)", "Model A (HCA)"],
                                 index=0)
@@ -286,12 +288,19 @@ for i, code in enumerate(selected_codes):
 
 with st.expander("ℹ️ How it works"):
     st.markdown(f"""
-**Leagues supported:** Premier League (E0) and Championship (E1). Toggle either or both in the sidebar.
-Adding more leagues later is a one-line edit — just add the code and name to the `LEAGUES` dict at the top.
+**Leagues supported:** all four English tiers — Premier League (E0), Championship (E1),
+League One (E2), and League Two (E3). Toggle any subset in the sidebar.
+Adding continental leagues later is a one-line edit — uncomment the entries in the
+`LEAGUES` dict at the top (La Liga, Bundesliga, Serie A, Ligue 1).
 
-**⚠️ Market line differs by league.** PL corners lines are typically 10.5; Championship is typically 9.5.
-There's one slider — set it for whichever league you're actively picking. If you view both together,
-the same line is applied to both, which will bias the lean.
+**⚠️ Market lines differ by league.** Typical sportsbook corners lines:
+- Premier League: **10.5**
+- Championship: **9.5**
+- League One: **9.0**
+- League Two: **8.5**
+
+There's one slider — set it for whichever league you're actively picking. If you view several
+leagues together, the same line is applied to all of them, which will bias the lean.
 
 **Two models running side by side — same A/B pattern as the MLB app.**
 
