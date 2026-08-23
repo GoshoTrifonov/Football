@@ -18,22 +18,40 @@ from picks_storage import save_todays_picks
 TORONTO_TZ = ZoneInfo("America/Toronto")
 LONDON_TZ  = ZoneInfo("Europe/London")
 
-PL_RESULTS_URL = "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
-FIXTURES_URL   = "https://www.football-data.co.uk/fixtures.csv"
+PL_RESULTS_URL_TEMPLATE = "https://www.football-data.co.uk/mmz4281/2526/{code}.csv"
+FIXTURES_URL            = "https://www.football-data.co.uk/fixtures.csv"
+
+# Add more leagues by appending here — code must match football-data.co.uk's Div column.
+LEAGUES = {
+    "E0": "Premier League",
+    "E1": "Championship",
+    # "SP1": "La Liga",  "D1": "Bundesliga",  "I1": "Serie A",  "F1": "Ligue 1"
+}
 
 MIN_SPLIT_GAMES = 3    # min games at a venue before we trust that split
 
 st.set_page_config(page_title="⚽ Corners Predictor", page_icon="⚽", layout="wide")
-st.title("⚽ Premier League — Corners Predictor")
+st.title("⚽ England Corners Predictor")
 st.caption(f"{datetime.now(TORONTO_TZ).strftime('%A, %B %d, %Y')} • Data: football-data.co.uk")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────
+selected_names = st.sidebar.multiselect(
+    "Leagues",
+    options=list(LEAGUES.values()),
+    default=list(LEAGUES.values()),
+)
+selected_codes = [code for code, name in LEAGUES.items() if name in selected_names]
+if not selected_codes:
+    st.warning("Select at least one league in the sidebar.")
+    st.stop()
+
 divisor      = st.sidebar.slider("Model A: HCA divisor", 1.0, 2.0, 1.0, step=0.05,
                                   help="Default lowered to 1.0 — sum of team averages is already close to a match total.")
 last_n       = st.sidebar.slider("Games for Model A form window", 3, 10, 7)
-market_line  = st.sidebar.number_input("Market line (typical: 10.5)",
+market_line  = st.sidebar.number_input("Market line",
                                         min_value=7.0, max_value=14.0,
-                                        value=10.5, step=0.5)
+                                        value=10.5, step=0.5,
+                                        help="PL is typically 10.5; Championship is typically 9.5. Adjust when viewing one league at a time.")
 active_model = st.sidebar.radio("Bet lean driven by:",
                                 ["Model B (opponent-adjusted)", "Model A (HCA)"],
                                 index=0)
@@ -42,28 +60,40 @@ pass_band    = st.sidebar.slider("Pass zone (±)", 0.0, 2.0, 0.5, 0.1,
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600)
-def load_results():
-    """Historical PL matches this season — has HC/AC corner columns."""
-    r = requests.get(PL_RESULTS_URL, timeout=15)
-    r.raise_for_status()
-    df = pd.read_csv(StringIO(r.text))
-    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
-    return df.dropna(subset=["Date", "HC", "AC"]).sort_values("Date")
+def load_results(codes_tuple):
+    """Historical matches this season for each selected league — one CSV per code,
+    concatenated. codes_tuple (not list) so streamlit can hash-cache it."""
+    dfs = []
+    for code in codes_tuple:
+        try:
+            r = requests.get(PL_RESULTS_URL_TEMPLATE.format(code=code), timeout=15)
+            r.raise_for_status()
+            df = pd.read_csv(StringIO(r.text))
+            df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+            df = df.dropna(subset=["Date", "HC", "AC"])
+            df["Div"] = code   # guarantee it's set, defensively
+            dfs.append(df)
+        except Exception as e:
+            st.warning(f"Could not load {LEAGUES.get(code, code)} data: {e}")
+    if not dfs:
+        st.error("No historical data could be loaded for the selected leagues.")
+        st.stop()
+    return pd.concat(dfs, ignore_index=True).sort_values("Date")
 
 @st.cache_data(ttl=900)
-def load_fixtures():
-    """Upcoming fixtures — all leagues, filtered to E0 (PL)."""
+def load_fixtures(codes_tuple):
+    """Upcoming fixtures — one CSV with all leagues, filtered to the selection."""
     r = requests.get(FIXTURES_URL, timeout=15)
     r.raise_for_status()
     df = pd.read_csv(StringIO(r.content.decode("utf-8-sig")))  # BOM safe
     df.columns = df.columns.str.strip()
-    df = df[df["Div"] == "E0"].copy()
+    df = df[df["Div"].isin(codes_tuple)].copy()
     df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
     return df.dropna(subset=["Date"]).sort_values(["Date", "Time"])
 
 with st.spinner("Loading data..."):
-    results = load_results()
-    fixtures = load_fixtures()
+    results = load_results(tuple(selected_codes))
+    fixtures = load_fixtures(tuple(selected_codes))
 
 # ── Team stats (home/away splits + overall) ─────────────────────────────────
 def team_matches(team):
@@ -162,11 +192,11 @@ else:
     fixtures = fixtures[fixtures["Date"].dt.date >= today_london]
 
 if fixtures.empty:
-    st.warning(f"No Premier League matches for: {when}")
-    with st.expander("📅 See all upcoming PL fixtures"):
-        all_up = load_fixtures()
+    st.warning(f"No matches for: {when} in {', '.join(selected_names)}")
+    with st.expander("📅 See all upcoming fixtures"):
+        all_up = load_fixtures(tuple(selected_codes))
         all_up = all_up[all_up["Date"].dt.date >= today_london]
-        st.dataframe(all_up[["Date","Time","HomeTeam","AwayTeam"]],
+        st.dataframe(all_up[["Div","Date","Time","HomeTeam","AwayTeam"]],
                      hide_index=True, use_container_width=True)
     st.stop()
 
@@ -194,6 +224,7 @@ for _, fx in fixtures.iterrows():
     rows.append({
         "Date":              fx["Date"].strftime("%a %b %d"),
         "Time (UK)":         fx.get("Time", ""),
+        "League":            LEAGUES.get(fx.get("Div", ""), fx.get("Div", "")),
         "Home":              home,
         "Away":              away,
         "Home H (F/A)":      display_split(h_stats_full, "H"),
@@ -204,9 +235,10 @@ for _, fx in fixtures.iterrows():
         # hidden fields used only by the save handler:
         "_edge":             edge,
         "_active_pred":      active_pred,
+        "_div":              fx.get("Div", ""),
     })
 
-visible_cols = ["Date","Time (UK)","Home","Away","Home H (F/A)","Away A (F/A)",
+visible_cols = ["Date","Time (UK)","League","Home","Away","Home H (F/A)","Away A (F/A)",
                 "Model A","Model B",f"Lean vs {market_line}"]
 df_out = pd.DataFrame(rows)
 st.dataframe(df_out[visible_cols], hide_index=True, use_container_width=True)
@@ -219,6 +251,8 @@ with c2:
         for r in rows:
             picks_to_save.append({
                 "date":         r["Date"],
+                "div":          r["_div"],
+                "league":       r["League"],
                 "home":         r["Home"],
                 "away":         r["Away"],
                 "home_H_split": r["Home H (F/A)"],
@@ -239,14 +273,26 @@ with c2:
 
 # ── Diagnostics ──────────────────────────────────────────────────────────────
 st.markdown("---")
-c1, c2, c3 = st.columns(3)
-c1.metric("Matches in dataset", len(results))
-c2.metric("Latest match date", results["Date"].max().strftime("%b %d, %Y"))
-c3.metric("Avg corners/game (PL this season)",
-          f"{(results['HC'] + results['AC']).mean():.1f}")
+diag_cols = st.columns(2 + len(selected_codes))
+diag_cols[0].metric("Matches in dataset", len(results))
+diag_cols[1].metric("Latest match", results["Date"].max().strftime("%b %d, %Y"))
+for i, code in enumerate(selected_codes):
+    sub = results[results["Div"] == code]
+    if not sub.empty:
+        avg = (sub["HC"] + sub["AC"]).mean()
+        diag_cols[2 + i].metric(f"{LEAGUES[code]} avg corners/game", f"{avg:.1f}")
+    else:
+        diag_cols[2 + i].metric(f"{LEAGUES[code]} avg corners/game", "—")
 
 with st.expander("ℹ️ How it works"):
     st.markdown(f"""
+**Leagues supported:** Premier League (E0) and Championship (E1). Toggle either or both in the sidebar.
+Adding more leagues later is a one-line edit — just add the code and name to the `LEAGUES` dict at the top.
+
+**⚠️ Market line differs by league.** PL corners lines are typically 10.5; Championship is typically 9.5.
+There's one slider — set it for whichever league you're actively picking. If you view both together,
+the same line is applied to both, which will bias the lean.
+
 **Two models running side by side — same A/B pattern as the MLB app.**
 
 **Model A — HCA (original formula)**
@@ -271,6 +317,6 @@ These are the raw ingredients Model B uses — check them if a prediction looks 
 **Bet lean** (⬆️ Over / ⬇️ Under / ➖ Pass) uses whichever model you select in the sidebar.
 Pass zone is ±{pass_band} corners around the market line (adjustable).
 
-**Save Today's Picks** stores both models' predictions so the Results page can settle both
-against actual corners and show which one wins more often.
+**Save Today's Picks** stores both models' predictions along with the league so the Results page
+can settle both against actual corners and show which one wins more often (per league).
     """)
