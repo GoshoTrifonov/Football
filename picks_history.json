@@ -770,5 +770,111 @@
         "lean": "\u2796 Pass (+0.2)"
       }
     ]
+  },
+  "2026-08-30": {
+    "corners": [
+      {
+        "date": "Sun Aug 30",
+        "div": "E0",
+        "league": "Premier League",
+        "home": "Chelsea",
+        "away": "Brighton",
+        "home_H_split": "6.8 / 3.9",
+        "away_A_split": "4.8 / 5.1",
+        "model_a": 10.9,
+        "model_b": 10.3,
+        "active_model": "B",
+        "active_pred": 10.3,
+        "edge": -0.2,
+        "market_line": 10.5,
+        "divisor": 1.0,
+        "lean": "\u2796 Pass (-0.2)"
+      },
+      {
+        "date": "Sun Aug 30",
+        "div": "E0",
+        "league": "Premier League",
+        "home": "Leeds",
+        "away": "Brentford",
+        "home_H_split": "5.6 / 4.2",
+        "away_A_split": "5.2 / 6.1",
+        "model_a": 8.9,
+        "model_b": 10.6,
+        "active_model": "B",
+        "active_pred": 10.6,
+        "edge": 0.1,
+        "market_line": 10.5,
+        "divisor": 1.0,
+        "lean": "\u2796 Pass (+0.1)"
+      },
+      {
+        "date": "Sun Aug 30",
+        "div": "E0",
+        "league": "Premier League",
+        "home": "Sunderland",
+        "away": "Fulham",
+        "home_H_split": "4.0 / 5.0",
+        "away_A_split": "4.4 / 5.4",
+        "model_a": 10.0,
+        "model_b": 9.4,
+        "active_model": "B",
+        "active_pred": 9.4,
+        "edge": -1.1,
+        "market_line": 10.5,
+        "divisor": 1.0,
+        "lean": "\u2b07\ufe0f Under (-1.1)"
+      },
+      {
+        "date": "Sun Aug 30",
+        "div": "E2",
+        "league": "League One",
+        "home": "AFC Wimbledon",
+        "away": "Wigan",
+        "home_H_split": "5.5 / 4.4",
+        "away_A_split": "5.3 / 6.4",
+        "model_a": 11.2,
+        "model_b": 10.8,
+        "active_model": "B",
+        "active_pred": 10.8,
+        "edge": 0.3,
+        "market_line": 10.5,
+        "divisor": 1.0,
+        "lean": "\u2796 Pass (+0.3)"
+      },
+      {
+        "date": "Sun Aug 30",
+        "div": "E2",
+        "league": "League One",
+        "home": "Mansfield",
+        "away": "Luton",
+        "home_H_split": "5.3 / 4.3",
+        "away_A_split": "5.1 / 4.2",
+        "model_a": 12.0,
+        "model_b": 9.4,
+        "active_model": "B",
+        "active_pred": 9.4,
+        "edge": -1.1,
+        "market_line": 10.5,
+        "divisor": 1.0,
+        "lean": "\u2b07\ufe0f Under (-1.1)"
+      },
+      {
+        "date": "Sun Aug 30",
+        "div": "E0",
+        "league": "Premier League",
+        "home": "Man United",
+        "away": "Ipswich",
+        "home_H_split": "5.3 / 4.5",
+        "away_A_split": "5.2 / 4.0",
+        "model_a": 11.0,
+        "model_b": 9.5,
+        "active_model": "B",
+        "active_pred": 9.5,
+        "edge": -1.0,
+        "market_line": 10.5,
+        "divisor": 1.0,
+        "lean": "\u2b07\ufe0f Under (-1.0)"
+      }
+    ]
   }
 }
