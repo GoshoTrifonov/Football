@@ -35,12 +35,12 @@ st.title("🔴 Live Corners Tracker")
 st.caption(f"{datetime.now(TORONTO_TZ).strftime('%A, %B %d, %Y • %H:%M')} ET")
 
 # ── API key ───────────────────────────────────────────────────────────────────
-api_key = st.secrets.get("API_FOOTBALL_KEY", "")
+api_key = st.secrets.get("FOOTBALL_API_KEY", "")
 if not api_key:
     st.error(
         "**API key not found.** Add `API_FOOTBALL_KEY` to your Streamlit secrets.\n\n"
         "1. Go to your Streamlit Cloud app → ⋮ → Settings → Secrets\n"
-        "2. Add: `API_FOOTBALL_KEY = \"your_key_here\"`\n"
+        "2. Add: `FOOTBALL_API_KEY = \"your_key_here\"`\n"
         "3. Get a free key at [api-football.com](https://www.api-football.com)"
     )
     st.stop()
