@@ -9,7 +9,7 @@ Call budget per refresh:
 
 Store your API key in Streamlit secrets:
   [secrets]
-  API_FOOTBALL_KEY = "your_key_here"
+  FOOTBALL_API_KEY = "your_key_here"
 """
 
 import streamlit as st
