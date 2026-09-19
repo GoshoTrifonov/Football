@@ -101,6 +101,19 @@ if refresh:
         st.error("Failed to fetch live fixtures.")
         st.stop()
 
+    # DEBUG — show everything the API returned so we can fix league IDs
+    with st.expander("🔍 DEBUG — raw API response (remove after fixing IDs)", expanded=True):
+        all_live = data.get("response", [])
+        st.write(f"Total live matches returned by API: {len(all_live)}")
+        for fx in all_live:
+            st.write({
+                "league_id":   fx["league"]["id"],
+                "league_name": fx["league"]["name"],
+                "country":     fx["league"]["country"],
+                "home":        fx["teams"]["home"]["name"],
+                "away":        fx["teams"]["away"]["name"],
+            })
+
     # Filter to our selected leagues
     live_fixtures = [
         f for f in data["response"]
