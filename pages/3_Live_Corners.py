@@ -9,7 +9,7 @@ Call budget per refresh:
 
 Store your API key in Streamlit secrets:
   [secrets]
-  FOOTBALL_API_KEY = "your_key_here"
+  API_FOOTBALL_KEY = "your_key_here"
 """
 
 import streamlit as st
@@ -38,7 +38,7 @@ st.caption(f"{datetime.now(TORONTO_TZ).strftime('%A, %B %d, %Y • %H:%M')} ET")
 api_key = st.secrets.get("FOOTBALL_API_KEY", "")
 if not api_key:
     st.error(
-        "**API key not found.** Add `API_FOOTBALL_KEY` to your Streamlit secrets.\n\n"
+        "**API key not found.** Add `FOOTBALL_API_KEY` to your Streamlit secrets.\n\n"
         "1. Go to your Streamlit Cloud app → ⋮ → Settings → Secrets\n"
         "2. Add: `FOOTBALL_API_KEY = \"your_key_here\"`\n"
         "3. Get a free key at [api-football.com](https://www.api-football.com)"
@@ -90,7 +90,7 @@ with col_refresh:
 
 calls_used = 0
 
-if refresh or "live_data" not in st.session_state:
+if refresh:
 
     # ── Step 1: fetch all live fixtures ──────────────────────────────────────
     with st.spinner("Fetching live fixtures..."):
@@ -184,6 +184,9 @@ if refresh or "live_data" not in st.session_state:
     st.session_state["calls_used"] = calls_used
 
 else:
+    if "live_data" not in st.session_state:
+        st.info("👆 Hit **Refresh Now** to fetch live corners. Each refresh uses 1 + N API calls (N = number of live matches).")
+        st.stop()
     rows = st.session_state.get("live_data", [])
 
 # ── Info bar ──────────────────────────────────────────────────────────────────
