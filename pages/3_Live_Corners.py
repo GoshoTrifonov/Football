@@ -108,8 +108,19 @@ if refresh:
     ]
 
     if not live_fixtures:
-        st.info("No live matches right now in the selected leagues.")
-        # Still show the call counter
+        all_live = data.get("response", [])
+        if all_live:
+            found_leagues = {}
+            for f in all_live:
+                lid = f["league"]["id"]
+                found_leagues[lid] = f["league"]["name"]
+            st.warning(
+                f"API returned **{len(all_live)} live match(es)** but none matched our league IDs (39, 40, 78, 61).\n\n"
+                f"**League IDs returned by API:** {found_leagues}\n\n"
+                f"Screenshot this — we need to update the IDs in the code."
+            )
+        else:
+            st.info("No live matches right now in the selected leagues.")
         with col_info:
             st.caption(f"API calls used this refresh: **{calls_used}** | "
                        f"Remaining today: check [api-sports.io dashboard](https://dashboard.api-sports.io)")
